@@ -3,6 +3,7 @@ import numpy as np
 from PIL import Image
 from tensorflow.keras.models import load_model
 import google.generativeai as genai
+import os
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(
@@ -12,11 +13,17 @@ st.set_page_config(
 )
 
 # ---------------- LOAD MODEL ----------------
-MODEL_PATH = "f&v_product_model.h5"   # put model in same folder
+MODEL_PATH = "f&v_product_model.h5"   # model must be in same folder
+
+if not os.path.exists(MODEL_PATH):
+    st.error("❌ Model file not found. Please upload f&v_product_model.h5")
+    st.stop()
+
 model = load_model(MODEL_PATH)
+st.success("✅ Model loaded successfully")
 
 # ⚠️ IMPORTANT:
-# These class names MUST match your dataset folders exactly
+# These must match the number of output neurons in your model
 class_names = ['Fruit', 'Vegetable', 'Other']
 
 # ---------------- GEMINI CONFIG ----------------
@@ -27,11 +34,12 @@ def gemini_analysis(item):
     prompt = f"""
     Food Item: {item}
 
-    1. Is it a fruit or vegetable?
-    2. Health benefits
-    3. Nutritional value
-    4. Uses in daily life
-    5. Is it good for human health?
+    • Is it a fruit or vegetable?
+    • Key health benefits
+    • Nutritional value
+    • Daily uses
+    • Is it good for human health?
+
     Explain in simple bullet points.
     """
     response = gemini_model.generate_content(prompt)
@@ -39,6 +47,7 @@ def gemini_analysis(item):
 
 # ---------------- IMAGE PREPROCESS ----------------
 def preprocess_image(image):
+    image = image.convert("RGB")
     image = image.resize((128, 128))
     img = np.array(image) / 255.0
     img = np.expand_dims(img, axis=0)
@@ -71,24 +80,25 @@ if input_method == "Use Camera":
         image = Image.open(camera_image)
 
 # ---------------- PREDICTION ----------------
-if image:
+if image is not None:
     st.image(image, caption="Input Image", use_column_width=True)
 
     processed = preprocess_image(image)
     prediction = model.predict(processed)
 
+    predicted_index = int(np.argmax(prediction))
     confidence = float(np.max(prediction))
-    predicted_class = class_names[np.argmax(prediction)]
+    predicted_class = class_names[predicted_index]
 
-    st.success(f"### Detected: {predicted_class}")
+    st.success(f"### 🧠 Detected: {predicted_class}")
     st.write(f"**Confidence:** {confidence:.2f}")
     st.progress(confidence)
 
     # ---------------- GEMINI AI OUTPUT ----------------
-    with st.spinner("Analyzing with Gemini AI..."):
+    with st.spinner("🤖 Analyzing with Gemini AI..."):
         analysis = gemini_analysis(predicted_class)
 
-    st.subheader("🤖 Gemini AI Health Analysis")
+    st.subheader("🔍 Gemini AI Health Analysis")
     st.write(analysis)
 
 # ---------------- FOOTER ----------------
