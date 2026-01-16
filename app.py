@@ -15,10 +15,9 @@ st.title("🍎 Fruit & Vegetable Recognition System")
 st.markdown("Upload an image **or** capture using your camera")
 
 # ---------------- GEMINI CONFIG ----------------
-# ---------------- GEMINI CONFIG ----------------
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
-gemini_model = genai.GenerativeModel("gemini-1.5-flash")
+gemini_model = genai.GenerativeModel("gemini-1.0-pro")
 
 
 def gemini_analysis(item):
