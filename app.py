@@ -17,34 +17,32 @@ st.markdown("Upload an image **or** capture using your camera")
 # ---------------- GEMINI CONFIG ----------------
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
-gemini_model = genai.GenerativeModel("gemini-1.0-pro")
+gemini_model = genai.GenerativeModel("models/gemini-1.5-pro")
 
 
 def gemini_analysis(item):
     try:
         prompt = f"""
-        Food Item: {item}
+        Food item: {item}
 
-        • Is it a fruit or vegetable?
-        • Key health benefits
-        • Nutritional value
-        • Daily uses
-        • Is it good for human health?
+        Give the nutrient content per 100g in bullet points:
+        - Calories
+        - Carbohydrates
+        - Protein
+        - Fat
+        - Fiber
+        - Vitamins
+        - Minerals
 
-        Explain in simple bullet points.
+        Keep it simple and clear.
         """
+
         response = gemini_model.generate_content(prompt)
         return response.text
 
     except Exception as e:
-        return f"""
-        ⚠️ Gemini AI analysis is temporarily unavailable.
+        return "⚠️ Nutrient data temporarily unavailable."
 
-        Reason:
-        {str(e)}
-
-        (This does NOT affect the CNN prediction.)
-        """
 
 # ---------------- IMAGE PREPROCESS ----------------
 def preprocess_image(image):
