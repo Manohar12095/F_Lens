@@ -21,19 +21,30 @@ gemini_model = genai.GenerativeModel("gemini-1.0-pro")
 
 
 def gemini_analysis(item):
-    prompt = f"""
-    Food Item: {item}
+    try:
+        prompt = f"""
+        Food Item: {item}
 
-    • Is it a fruit or vegetable?
-    • Key health benefits
-    • Nutritional value
-    • Daily uses
-    • Is it good for human health?
+        • Is it a fruit or vegetable?
+        • Key health benefits
+        • Nutritional value
+        • Daily uses
+        • Is it good for human health?
 
-    Explain in simple bullet points.
-    """
-    response = gemini_model.generate_content(prompt)
-    return response.text
+        Explain in simple bullet points.
+        """
+        response = gemini_model.generate_content(prompt)
+        return response.text
+
+    except Exception as e:
+        return f"""
+        ⚠️ Gemini AI analysis is temporarily unavailable.
+
+        Reason:
+        {str(e)}
+
+        (This does NOT affect the CNN prediction.)
+        """
 
 # ---------------- IMAGE PREPROCESS ----------------
 def preprocess_image(image):
