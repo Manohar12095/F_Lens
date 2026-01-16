@@ -3,6 +3,7 @@ import numpy as np
 from PIL import Image
 from tensorflow.keras.models import load_model
 import google.generativeai as genai
+import gdown
 import os
 
 # ---------------- PAGE CONFIG ----------------
@@ -12,18 +13,19 @@ st.set_page_config(
     layout="centered"
 )
 
-# ---------------- LOAD MODEL ----------------
-MODEL_PATH = "f&v_product_model.h5"   # model must be in same folder
+# ---------------- MODEL DOWNLOAD ----------------
+MODEL_PATH = "f&v_product_model.h5"
 
 if not os.path.exists(MODEL_PATH):
-    st.error("❌ Model file not found. Please upload f&v_product_model.h5")
-    st.stop()
+    with st.spinner("📥 Downloading model..."):
+        url = "https://drive.google.com/uc?id=1zFL5xeBEjXfGRpHnJZjvXJjlEv7zUi_p"
+        gdown.download(url, MODEL_PATH, quiet=False)
 
+# ---------------- LOAD MODEL ----------------
 model = load_model(MODEL_PATH)
 st.success("✅ Model loaded successfully")
 
-# ⚠️ IMPORTANT:
-# These must match the number of output neurons in your model
+# ⚠️ MUST match model output layer
 class_names = ['Fruit', 'Vegetable', 'Other']
 
 # ---------------- GEMINI CONFIG ----------------
@@ -64,7 +66,7 @@ input_method = st.radio(
 
 image = None
 
-# ---- Upload from computer ----
+# ---- Upload Image ----
 if input_method == "Upload Image":
     uploaded_file = st.file_uploader(
         "Upload image",
@@ -73,7 +75,7 @@ if input_method == "Upload Image":
     if uploaded_file:
         image = Image.open(uploaded_file)
 
-# ---- Camera input ----
+# ---- Camera Input ----
 if input_method == "Use Camera":
     camera_image = st.camera_input("Capture image")
     if camera_image:
@@ -94,7 +96,7 @@ if image is not None:
     st.write(f"**Confidence:** {confidence:.2f}")
     st.progress(confidence)
 
-    # ---------------- GEMINI AI OUTPUT ----------------
+    # ---------------- GEMINI AI ----------------
     with st.spinner("🤖 Analyzing with Gemini AI..."):
         analysis = gemini_analysis(predicted_class)
 
