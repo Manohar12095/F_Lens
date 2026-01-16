@@ -15,34 +15,31 @@ st.title("🍎 Fruit & Vegetable Recognition System")
 st.markdown("Upload an image **or** capture using your camera")
 
 # ---------------- GEMINI CONFIG ----------------
+# Make sure you have added your API key in Streamlit Secrets
+# st.secrets["GEMINI_API_KEY"]
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
-gemini_model = genai.GenerativeModel("models/gemini-1.5-pro")
-
+# Use a supported model (check in Google AI Studio)
+gemini_model = genai.GenerativeModel("gemini-1.5-pro")
 
 def gemini_analysis(item):
+    prompt = f"""
+    Food Item: {item}
+
+    • Is it a fruit or vegetable?
+    • Key health benefits
+    • Nutritional value
+    • Daily uses
+    • Is it good for human health?
+
+    Explain in simple bullet points.
+    """
     try:
-        prompt = f"""
-        Food item: {item}
-
-        Give the nutrient content per 100g in bullet points:
-        - Calories
-        - Carbohydrates
-        - Protein
-        - Fat
-        - Fiber
-        - Vitamins
-        - Minerals
-
-        Keep it simple and clear.
-        """
-
         response = gemini_model.generate_content(prompt)
         return response.text
-
     except Exception as e:
+        # If the model is not available or API fails
         return "⚠️ Nutrient data temporarily unavailable."
-
 
 # ---------------- IMAGE PREPROCESS ----------------
 def preprocess_image(image):
@@ -77,9 +74,9 @@ if input_method == "Use Camera":
 if image is not None:
     st.image(image, caption="Input Image", use_column_width=True)
 
-    _ = preprocess_image(image)  # preprocessing step (for report)
+    _ = preprocess_image(image)  # preprocessing step
 
-    # Simulated CNN output (cloud-safe)
+    # Simulated CNN output (for now, offline)
     class_names = ["Fruit", "Vegetable", "Other"]
     predicted_class = np.random.choice(class_names)
     confidence = np.random.uniform(0.85, 0.98)
