@@ -2,6 +2,9 @@ import streamlit as st
 import numpy as np
 from PIL import Image
 import google.generativeai as genai
+from tensorflow.keras.models import load_model
+import gdown
+import os
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(
@@ -15,31 +18,46 @@ st.title("🍎 Fruit & Vegetable Recognition System")
 st.markdown("Upload an image **or** capture using your camera")
 
 # ---------------- GEMINI CONFIG ----------------
-# Make sure you have added your API key in Streamlit Secrets
-# st.secrets["GEMINI_API_KEY"]
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
-# Use a supported model (check in Google AI Studio)
-gemini_model = genai.GenerativeModel("gemini-1.5-pro")
+# ✅ IMPORTANT: Use model name exactly like this
+gemini_model = genai.GenerativeModel("models/gemini-1.5-pro")
 
 def gemini_analysis(item):
     prompt = f"""
     Food Item: {item}
 
-    • Is it a fruit or vegetable?
-    • Key health benefits
-    • Nutritional value
-    • Daily uses
-    • Is it good for human health?
+    Give:
+    - Nutrient content
+    - Health benefits
+    - Vitamins & minerals
+    - Daily uses
+    - Is it good for human health?
 
     Explain in simple bullet points.
     """
     try:
         response = gemini_model.generate_content(prompt)
         return response.text
-    except Exception as e:
-        # If the model is not available or API fails
+    except Exception:
         return "⚠️ Nutrient data temporarily unavailable."
+
+# ---------------- MODEL DOWNLOAD ----------------
+MODEL_PATH = "model_F.h5"
+
+if not os.path.exists(MODEL_PATH):
+    with st.spinner("📥 Downloading trained CNN model..."):
+        gdown.download(
+            "https://drive.google.com/uc?id=1aC4cEJyUKbAQGk79SF9oyhRg4yISTY1I",
+            MODEL_PATH,
+            quiet=False
+        )
+
+# ---------------- LOAD MODEL ----------------
+model = load_model(MODEL_PATH)
+
+# ⚠️ MUST MATCH TRAINING ORDER
+class_names = ["Fruit", "Vegetable", "Other"]
 
 # ---------------- IMAGE PREPROCESS ----------------
 def preprocess_image(image):
@@ -70,28 +88,28 @@ if input_method == "Use Camera":
     if camera_image:
         image = Image.open(camera_image)
 
-# ---------------- PREDICTION (SIMULATED) ----------------
+# ---------------- PREDICTION ----------------
 if image is not None:
     st.image(image, caption="Input Image", use_column_width=True)
 
-    _ = preprocess_image(image)  # preprocessing step
+    processed = preprocess_image(image)
+    prediction = model.predict(processed)
 
-    # Simulated CNN output (for now, offline)
-    class_names = ["Fruit", "Vegetable", "Other"]
-    predicted_class = np.random.choice(class_names)
-    confidence = np.random.uniform(0.85, 0.98)
+    predicted_index = np.argmax(prediction)
+    confidence = float(np.max(prediction))
+    predicted_class = class_names[predicted_index]
 
     st.success(f"### 🧠 Detected: {predicted_class}")
     st.write(f"**Confidence:** {confidence:.2f}")
     st.progress(confidence)
 
     # ---------------- GEMINI AI ----------------
-    with st.spinner("🤖 Analyzing with Gemini AI..."):
+    with st.spinner("🤖 Fetching nutrient details..."):
         analysis = gemini_analysis(predicted_class)
 
-    st.subheader("🔍 Gemini AI Health Analysis")
+    st.subheader("🥗 Nutrient & Health Information")
     st.write(analysis)
 
 # ---------------- FOOTER ----------------
 st.markdown("---")
-st.caption("CNN (trained offline) + Gemini AI | College Mini Project")
+st.caption("CNN + Gemini AI | College Mini Project")
